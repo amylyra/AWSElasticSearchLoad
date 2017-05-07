@@ -1,16 +1,22 @@
 import logging
 import os
 
+from AWSAccess.signin import AWSConnection
+
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import TransportError
 from elasticsearch.helpers import bulk, streaming_bulk
 
 _INDEX_NAME = 'ds1'
 _TYPE_NAME = 'review'
+_ESREGION = 'us-west-2'
+_HOST = os.environ.get("ESHOST")
 
-def create_review_index(client, index):
+def create_review_index(client, index=_INDEX_NAME):
     # Create Mapping Analyzer and empty index
-    pass
+    user_mapping = {
+        '' 
+    }
 
 def parse_commits(head, name):
     """Get through the reviews and generate a document per review
@@ -30,3 +36,6 @@ def clear_index(client, index=_INDEX_NAME):
 
 if __name__ == '__main__':
     tracer = logging.getLogger('elasticsearch.trace')
+    es_client = Elasticsearch(connection_class=AWSConnection,
+                              region = _ESREGION,
+                              host = _HOST)
