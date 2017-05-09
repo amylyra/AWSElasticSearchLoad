@@ -1,13 +1,15 @@
 import logging
 import os
 import json
+import sys
 
-# sys.path.append('../')
+sys.path.append('../AWSAccess/')
+
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import TransportError
 from elasticsearch.helpers import bulk, streaming_bulk
 
-from .AWSAccess.signin import AWSConnection
+from signin import AWSConnection
 
 _INDEX_NAME = 'ds1'
 _TYPE_NAME = 'review'
@@ -43,7 +45,7 @@ def getmultifield(field_name, string_keyword='keyword'):
     return multiple_field
 
 
-def ulta_mapping():
+def ulta_mappings():
     review_mappings = {
         'reviews': {
             'name': getmultifield('name'),
@@ -124,16 +126,16 @@ def create_review_index(client, review_mapping_format, index=_INDEX_NAME):
 
             'analysis': analysis
         },
-        'mappings': ulta_mappings
+        'mappings': ulta_mappings()
     }
 
     try:
         client.indices.create(
-            index = index,
-            body = create_index_body
+            index=index,
+            body=create_index_body
         )
     except TransportError as e:
-        if e.error == 'index_already_exists_exception' :
+        if e.error == 'index_already_exists_exception':
             client.indices.delete(index)
         else:
             raise
@@ -147,12 +149,59 @@ def parse_ultaReviews(filename):
     with open(filename) as f:
         data = json.load(f)
 
+    for i in data:
+        item = data[i]
+        reviews = item['reviews'] if ('reviews' in item) else None
+        if not reviews: continue
+        if len(reviews) == 0: continue
+        id_extention = 0
+        for r in reviews:
+            newreview = {}
+            newreview['name'] = item['name']
+            newreview['category'] = item['category']
+            newreview['regimen'] = item['regimen']
+            newreview['size'] = item['size']
+            newreview['cons'] = item['cons']
+            newreview['pros'] = item['pros']
+            newreview['best_uses'] = item['best_uses']
+            newreview['brand'] = item['brand']
+            newreview['number_reviews'] = item['number_reviews'] #
+            newreview['review_rating'] = item['review_rating'] #
+            newreview['details'] = item['details']
+            newreview['ingredient'] = [item['ingredient']] #
+            newreview['price'] = item['price']
+            newreview['description'] = item['description']
+            newreview['review_pros'] = (r['review_pros']
+                                        if ('review_pros' in r) else None)
+            newreview['review_cons'] = (r['review_cons']
+                                        if ('review_cons' in r) else None)
+            newreview['review_bestuses'] = (r['review_bestuses']
+                                            if ('review_bestuses' in r)
+                                            else None)
+            newreview['review_rating_score'] = (r['rating_score']
+                                                if ('rating_score' in r)
+                                                else None) #
+            newreview['rating_title'] = (r['rating_title']
+                                         if ('rating_title' in r) else None)
+            newreview['review_text'] = (r['review_text']
+                                        if ('review_text' in r) else None)
+            newreview['review_author_name'] = (r['author_name']
+                                               if ('author_name' in r)
+                                               else None)
+            newreview['review_state'] = r['state'] if ('state' in r) else None
+            newreview['review_location'] = (r['location']
+                                            if ('location' in r) else None)
+            newreview['review_date'] = r['date'] if ('date' in r) else None
+            newreview['review_author_type'] = (r['author_type']
+                                               if ('author_type' in r)
+                                               else None)
+
 
 def load_ultaReviews(client, path=None, index=_INDEX_NAME):
     """Parsing a review from one source and load it into elastic
     using 'client'. If the index does not exists, abort
     """
-    filename='../../Data/ulta_serum_processed_new.json'
+    filename = '../Data/ulta_serum_processed_new.json'
     parse_ultaReviews(filename)
 
 
