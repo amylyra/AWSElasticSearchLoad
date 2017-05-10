@@ -59,7 +59,7 @@ def ulta_mappings():
             'num_reviews': {'type': 'integer'},
             'review_rating': {'type': 'float'},
             'details': getmultifield('details'),
-            'ingredient': getmultifield('ingredient'),
+            'ingredient': {'type', 'keyword'},
             'price': {'type': 'integer'},
             'description': {'type': 'text'},
             'review_pros': getmultifield('review_pros'),
@@ -157,6 +157,10 @@ def parse_ultaReviews(filename):
         id_extention = 0
         for r in reviews:
             newreview = {}
+            id_extention += 1
+            _id = i + str(id_extention)
+            newreview['_id'] = _id
+            newreview['_type'] = _TYPE_NAME
             newreview['name'] = item['name']
             newreview['category'] = item['category']
             newreview['regimen'] = item['regimen']
@@ -165,10 +169,12 @@ def parse_ultaReviews(filename):
             newreview['pros'] = item['pros']
             newreview['best_uses'] = item['best_uses']
             newreview['brand'] = item['brand']
-            newreview['number_reviews'] = item['number_reviews'] #
-            newreview['review_rating'] = item['review_rating'] #
+            num_reviews = int(item['number_reviews'])
+            newreview['number_reviews'] = num_reviews
+            review_ratings = float(item['review_rating'])
+            newreview['review_rating'] = review_ratings
             newreview['details'] = item['details']
-            newreview['ingredient'] = [item['ingredient']] #
+            newreview['ingredient'] = [item['ingredient']]
             newreview['price'] = item['price']
             newreview['description'] = item['description']
             newreview['review_pros'] = (r['review_pros']
@@ -178,9 +184,10 @@ def parse_ultaReviews(filename):
             newreview['review_bestuses'] = (r['review_bestuses']
                                             if ('review_bestuses' in r)
                                             else None)
-            newreview['review_rating_score'] = (r['rating_score']
+
+            newreview['review_rating_score'] = (float(r['rating_score'][0])
                                                 if ('rating_score' in r)
-                                                else None) #
+                                                else None)
             newreview['rating_title'] = (r['rating_title']
                                          if ('rating_title' in r) else None)
             newreview['review_text'] = (r['review_text']
@@ -195,6 +202,7 @@ def parse_ultaReviews(filename):
             newreview['review_author_type'] = (r['author_type']
                                                if ('author_type' in r)
                                                else None)
+            yield newreview
 
 
 def load_ultaReviews(client, path=None, index=_INDEX_NAME):
@@ -203,6 +211,11 @@ def load_ultaReviews(client, path=None, index=_INDEX_NAME):
     """
     filename = '../Data/ulta_serum_processed_new.json'
     parse_ultaReviews(filename)
+
+    client.create(
+        index=index,
+        doc_type=
+    )
 
 
 def clear_index(client, index=_INDEX_NAME):
